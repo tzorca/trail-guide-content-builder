@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
 import PIL
 from os import walk
 import os
@@ -8,12 +8,26 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def get_full_filepaths_in_tree(root_dir_path):
 	filepaths = []
-	for (dirpath, dirnames, filenames) in walk(root_dir_path
-		):
+	for (dirpath, dirnames, filenames) in walk(root_dir_path):
 		for filename in filenames:
 			full_path = os.path.join(dirpath, filename)
 			filepaths.append(full_path)
 	return filepaths
+
+def resize_image_using_ratio(img, new_image_width):
+	img_width = img.size[0]
+	img_height = img.size[1]
+
+	img_width_to_height_ratio = img_width / img_height
+
+	new_image_height = new_image_width / img_width_to_height_ratio
+	new_image_size = (int(new_image_width), int(new_image_height))
+
+	return img.resize(size=new_image_size, resample=Image.ANTIALIAS)
+
+def add_watermark_to_image(img, watermark_text):
+	# TODO
+	return img
 
 def build_src_to_dest_image_path_map(src_filepaths, dest_dirpath):
 	rel_path_to_img_count = {}
@@ -61,19 +75,17 @@ for src_filepath in src_to_dest_path_map:
 	if not os.path.exists(dest_dirpath):
 		os.makedirs(dest_dirpath)
 
-	print('Processing image from ' + src_filepath + '...')
-
+	print('Loading image from ' + src_filepath + '...')
+	
 	img = Image.open(src_filepath)
+	
+	print('Resizing image...')
 
-	img_width = img.size[0]
-	img_height = img.size[1]
+	result_img = resize_image_using_ratio(img, settings.output_image_width)
 
-	img_width_to_height_ratio = img_width / img_height
+	print('Adding watermark...')
 
-	output_image_height = settings.output_image_width / img_width_to_height_ratio
-	output_image_size = (int(settings.output_image_width), int(output_image_height))
-
-	result_img = img.resize(size=output_image_size, resample=Image.ANTIALIAS)
+	result_img = add_watermark_to_image(img, settings.watermark_text)
 
 	print('Saving result image to ' + dest_filepath + '...')
 
