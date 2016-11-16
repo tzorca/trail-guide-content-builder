@@ -25,8 +25,12 @@ def resize_image_using_ratio(img, new_image_width):
 
 	return img.resize(size=new_image_size, resample=Image.ANTIALIAS)
 
-def add_watermark_to_image(img, watermark_text):
-	# TODO
+def add_watermark_to_image(img, watermark_text, watermark_rgb, watermark_font_size):
+	watermark_location = (watermark_font_size, img.height - watermark_font_size*2)
+	draw = ImageDraw.Draw(img)
+	font = ImageFont.truetype("fonts/arial.ttf", watermark_font_size)
+	draw.text(watermark_location, watermark_text, watermark_rgb, font=font)
+
 	return img
 
 def build_src_to_dest_image_path_map(src_filepaths, dest_dirpath):
@@ -85,7 +89,7 @@ for src_filepath in src_to_dest_path_map:
 
 	print('Adding watermark...')
 
-	result_img = add_watermark_to_image(img, settings.watermark_text)
+	result_img = add_watermark_to_image(result_img, settings.watermark_text, settings.watermark_rgb,settings.watermark_font_size)
 
 	print('Saving result image to ' + dest_filepath + '...')
 
