@@ -42,7 +42,7 @@ def build_src_to_dest_image_path_map(src_filepaths, dest_dirpath):
 		src_file_dir_path = os.path.dirname(src_filepath)
 
 		# Get path relative to source root/start path (the part that comes after the root path)
-		start_rel_path = os.path.relpath(src_file_dir_path, settings.content_source_path)
+		start_rel_path = os.path.relpath(src_file_dir_path, settings.Paths.src_images)
 
 		# Increment rel_path_to_img_count for that start_rel_path
 		rel_path_to_img_count[start_rel_path] = rel_path_to_img_count.get(start_rel_path, 0) + 1
@@ -60,38 +60,44 @@ def build_src_to_dest_image_path_map(src_filepaths, dest_dirpath):
 
 	return src_path_to_dest_path
 
+def process_and_save_images(src_to_dest_path, src_image_path, img_settings):
+	for src_filepath in src_to_dest_path:
+		dest_filepath = src_to_dest_path[src_filepath]
+		dest_dirpath = os.path.dirname(dest_filepath)
+		src_dirpath = os.path.dirname(src_filepath)
+
+		src_rel_dirpath = os.path.relpath(src_dirpath, src_image_path)
+		dest_filename = os.path.basename(dest_filepath)
+
+		# Create result directory if it doesn't exist
+		if not os.path.exists(dest_dirpath):
+			os.makedirs(dest_dirpath)
+
+		# Skip if dest_filepath already exists
+		if os.path.isfile(dest_filepath):
+			continue
+
+		print('Converting image from ' + src_rel_dirpath + '...')
+		
+		img = Image.open(src_filepath)
+
+		result_img = resize_image_using_ratio(img, img_settings.output_width)
+
+		result_img = add_watermark_to_image(result_img, img_settings.Watermark.text, 
+			img_settings.Watermark.rgb, img_settings.Watermark.font_size)
+
+		result_img.save(dest_filepath, quality=80)
+
+
+
 print("Getting list of source file paths...")
-src_filepaths = utils.get_full_filepaths_in_tree(settings.content_source_path)
+src_filepaths = utils.get_full_filepaths_in_tree(settings.Paths.src_images)
 
 print("Building path transformations from source image path to destination image path...")
-src_to_dest_path_map = build_src_to_dest_image_path_map(src_filepaths, settings.content_dest_path)
+src_to_dest_path_map = build_src_to_dest_image_path_map(src_filepaths, settings.Paths.dest_images)
 
 
-print("Resizing and saving images to respective output paths...")
-for src_filepath in src_to_dest_path_map:
-	dest_filepath = src_to_dest_path_map[src_filepath]
-	dest_dirpath = os.path.dirname(dest_filepath)
-	src_dirpath = os.path.dirname(src_filepath)
-
-	src_rel_dirpath = os.path.relpath(src_dirpath, settings.content_source_path)
-	dest_filename = os.path.basename(dest_filepath)
-
-	# Create result directory if it doesn't exist
-	if not os.path.exists(dest_dirpath):
-		os.makedirs(dest_dirpath)
-
-	# Skip if dest_filepath already exists
-	if os.path.isfile(dest_filepath):
-		continue
-
-	print('Converting image from ' + src_rel_dirpath + '...')
-	
-	img = Image.open(src_filepath)
-
-	result_img = resize_image_using_ratio(img, settings.output_image_width)
-
-	result_img = add_watermark_to_image(result_img, settings.watermark_text, settings.watermark_rgb,settings.watermark_font_size)
-
-	result_img.save(dest_filepath, quality=80)
-
+print("Processing and saving images to respective output paths...")
+process_and_save_images(src_to_dest_path_map, src_image_path=settings.Paths.src_images, 
+	img_settings=settings.ImageProcessing)
 
