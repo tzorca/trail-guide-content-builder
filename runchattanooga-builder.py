@@ -6,6 +6,11 @@ import json
 import hashlib
 import settings
 import utils
+import sys
+
+if sys.version_info[0] != 3:
+    print("This script requires Python version 3.0 or later")
+    sys.exit(1)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -89,15 +94,29 @@ def process_and_save_images(src_to_dest_path, src_image_path, img_settings):
 
 		result_img.save(dest_filepath, quality=80)
 
-def remove_extra_files(dir_path, expected_filepaths):
+def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
 	expected_filepaths_set = set([os.path.abspath(filepath) for filepath in expected_filepaths])
+
+	extra_filepaths = []
 
 	actual_filepaths = glob.glob(os.path.join(dir_path, "*.*"))
 	for actual_filepath in actual_filepaths:
 		abs_actual_filepath = os.path.abspath(actual_filepath)
 		if abs_actual_filepath not in expected_filepaths_set:
-			print('Removing extra file ' + abs_actual_filepath)
-			os.remove(abs_actual_filepath)
+			extra_filepaths.append(abs_actual_filepath)
+	
+	print('The following extra images exist at the destination: ')
+	for extra_filepath in extra_filepaths:
+		print(extra_filepath)
+
+	user_input = input('If you wish to remove them, type ''delete'': ')
+	print('You entered ' + user_input)
+
+	if user_input == 'delete':
+		print('Removing extra files...')
+		for extra_filepath in extra_filepaths:
+			os.remove(extra_filepath)
+
 
 print("Getting list of source image paths...")
 src_filepaths = utils.get_full_filepaths_in_tree(settings.DirPaths.src_images)
@@ -110,4 +129,4 @@ process_and_save_images(src_to_dest_path_map, src_image_path=settings.DirPaths.s
 	img_settings=settings.ImageProcessing)
 
 dest_filepaths = list(src_to_dest_path_map.values())
-remove_extra_files(settings.DirPaths.dest_images, dest_filepaths)
+remove_extra_files_if_confirmed(settings.DirPaths.dest_images, dest_filepaths)
