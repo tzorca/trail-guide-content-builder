@@ -1,6 +1,7 @@
 import PIL
 from PIL import Image, ImageFont, ImageDraw, ImageFile
 import os
+import glob
 import json
 import hashlib
 import settings
@@ -42,7 +43,7 @@ def build_src_to_dest_image_path_map(src_filepaths, dest_dirpath):
 		src_file_dir_path = os.path.dirname(src_filepath)
 
 		# Get path relative to source root/start path (the part that comes after the root path)
-		start_rel_path = os.path.relpath(src_file_dir_path, settings.Paths.src_images)
+		start_rel_path = os.path.relpath(src_file_dir_path, settings.DirPaths.src_images)
 
 		# Increment rel_path_to_img_count for that start_rel_path
 		rel_path_to_img_count[start_rel_path] = rel_path_to_img_count.get(start_rel_path, 0) + 1
@@ -88,16 +89,25 @@ def process_and_save_images(src_to_dest_path, src_image_path, img_settings):
 
 		result_img.save(dest_filepath, quality=80)
 
+def remove_extra_files(dir_path, expected_filepaths):
+	expected_filepaths_set = set([os.path.abspath(filepath) for filepath in expected_filepaths])
 
+	actual_filepaths = glob.glob(os.path.join(dir_path, "*.*"))
+	for actual_filepath in actual_filepaths:
+		abs_actual_filepath = os.path.abspath(actual_filepath)
+		if abs_actual_filepath not in expected_filepaths_set:
+			print('Removing extra file ' + abs_actual_filepath)
+			os.remove(abs_actual_filepath)
 
-print("Getting list of source file paths...")
-src_filepaths = utils.get_full_filepaths_in_tree(settings.Paths.src_images)
+print("Getting list of source image paths...")
+src_filepaths = utils.get_full_filepaths_in_tree(settings.DirPaths.src_images)
 
 print("Building path transformations from source image path to destination image path...")
-src_to_dest_path_map = build_src_to_dest_image_path_map(src_filepaths, settings.Paths.dest_images)
-
+src_to_dest_path_map = build_src_to_dest_image_path_map(src_filepaths, settings.DirPaths.dest_images)
 
 print("Processing and saving images to respective output paths...")
-process_and_save_images(src_to_dest_path_map, src_image_path=settings.Paths.src_images, 
+process_and_save_images(src_to_dest_path_map, src_image_path=settings.DirPaths.src_images, 
 	img_settings=settings.ImageProcessing)
 
+dest_filepaths = list(src_to_dest_path_map.values())
+remove_extra_files(settings.DirPaths.dest_images, dest_filepaths)
