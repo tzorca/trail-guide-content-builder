@@ -1,9 +1,10 @@
-from PIL import Image, ImageFont, ImageDraw
 import PIL
-from os import walk
+from PIL import Image, ImageFont, ImageDraw, ImageFile
 import os
+from os import walk
 import settings
-from PIL import ImageFile
+import json
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def get_full_filepaths_in_tree(root_dir_path):
@@ -55,8 +56,8 @@ def build_src_to_dest_image_path_map(src_filepaths, dest_dirpath):
 		folder_number = len(rel_path_to_img_count)
 
 		# Build destination path
-		dest_file_name = 'img%(img_number)s_%(folder_number)s.jpg' % locals()
-		dest_filepath = os.path.join(dest_dirpath, start_rel_path, dest_file_name)
+		dest_file_name = 'img%(folder_number)s_%(img_number)s.jpg' % locals()
+		dest_filepath = os.path.join(dest_dirpath, dest_file_name)
 
 		# Map source path to dest_path
 		src_path_to_dest_path[src_filepath] = dest_filepath
@@ -74,24 +75,26 @@ print("Resizing and saving images to respective output paths...")
 for src_filepath in src_to_dest_path_map:
 	dest_filepath = src_to_dest_path_map[src_filepath]
 	dest_dirpath = os.path.dirname(dest_filepath)
+	src_dirpath = os.path.dirname(src_filepath)
 
-	# Create result directory
+	src_rel_dirpath = os.path.relpath(src_dirpath, settings.content_source_path)
+	dest_filename = os.path.basename(dest_filepath)
+
+	# Create result directory if it doesn't exist
 	if not os.path.exists(dest_dirpath):
 		os.makedirs(dest_dirpath)
 
-	print('Loading image from ' + src_filepath + '...')
+	# Skip if dest_filepath already exists
+	if os.path.isfile(dest_filepath):
+		continue
+
+	print('Converting image from ' + src_rel_dirpath + '...')
 	
 	img = Image.open(src_filepath)
-	
-	print('Resizing image...')
 
 	result_img = resize_image_using_ratio(img, settings.output_image_width)
 
-	print('Adding watermark...')
-
 	result_img = add_watermark_to_image(result_img, settings.watermark_text, settings.watermark_rgb,settings.watermark_font_size)
-
-	print('Saving result image to ' + dest_filepath + '...')
 
 	result_img.save(dest_filepath, quality=80)
 
