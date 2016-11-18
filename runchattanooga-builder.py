@@ -105,6 +105,9 @@ def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
 		if abs_actual_filepath not in expected_filepaths_set:
 			extra_filepaths.append(abs_actual_filepath)
 	
+	if len(extra_filepaths) == 0:
+		return
+	
 	print('The following extra images exist at the destination: ')
 	for extra_filepath in extra_filepaths:
 		print(extra_filepath)
