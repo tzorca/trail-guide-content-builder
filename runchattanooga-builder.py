@@ -33,7 +33,7 @@ def add_watermark_to_image(img, watermark_text, watermark_rgb, watermark_font_si
 
 	return img
 
-def build_src_to_dest_image_path_map(src_filepaths, dest_dirpath):
+def build_src_to_dest_image_path_map(src_filepaths, dest_dirpath, img_output_instances):
 	rel_path_to_img_count = {}
 	src_path_to_dest_path = {}
 
@@ -53,54 +53,57 @@ def build_src_to_dest_image_path_map(src_filepaths, dest_dirpath):
 		# Increment rel_path_to_img_count for that start_rel_path
 		rel_path_to_img_count[start_rel_path] = rel_path_to_img_count.get(start_rel_path, 0) + 1
 
-		# Build destination path
+		# Build destination paths
 		# Use hash of source directory to maintain a small correlation between source path and destination filename
 		# This should allow deleting individual destination images and re-running the process quickly
 		# But still want to maintain order of files, so will use actual src_img_number as next part
 		start_rel_path_hash = hashlib.md5(start_rel_path.encode('utf-8')).hexdigest()[:10]
-		dest_file_name = 'img-' + start_rel_path_hash + '-' + src_img_number + '.jpg'
-		dest_filepath = os.path.join(dest_dirpath, dest_file_name)
+		dest_file_base_name = 'img-' + start_rel_path_hash + '-' + src_img_number 
 
-		# Map source path to dest_path
-		src_path_to_dest_path[src_filepath] = dest_filepath
+		# Add mapping for each image destination
+		src_path_to_dest_path[src_filepath] = {}
+		current_mappings = src_path_to_dest_path[src_filepath]
+		for img_output_name, img_output_props in img_output_instances.items():
+			file_name = dest_file_base_name + img_output_props['filename_addition'] + ".jpg"
+			current_mappings[img_output_name] = os.path.join(dest_dirpath, file_name)
 
 	return src_path_to_dest_path
 
-def process_and_save_images(src_to_dest_path, src_image_path, img_settings):
-	for src_filepath in src_to_dest_path:
-		dest_filepath = src_to_dest_path[src_filepath]
-		dest_dirpath = os.path.dirname(dest_filepath)
-		src_dirpath = os.path.dirname(src_filepath)
+def process_and_save_images(src_to_dest_instances, src_image_path, img_settings):
+	for src_filepath in src_to_dest_instances:
+		dest_instances = src_to_dest_instances[src_filepath]
 
-		src_rel_dirpath = os.path.relpath(src_dirpath, src_image_path)
-		dest_filename = os.path.basename(dest_filepath)
+		for instance_name, dest_filepath in dest_instances.items():
+			dest_dirpath = os.path.dirname(dest_filepath)
+			src_dirpath = os.path.dirname(src_filepath)
 
-		# Create result directory if it doesn't exist
-		if not os.path.exists(dest_dirpath):
-			os.makedirs(dest_dirpath)
+			src_rel_dirpath = os.path.relpath(src_dirpath, src_image_path)
+			dest_filename = os.path.basename(dest_filepath)
 
-		# Skip if dest_filepath already exists
-		# if os.path.isfile(dest_filepath):
-		# 	continue
+			# Create result directory if it doesn't exist
+			if not os.path.exists(dest_dirpath):
+				os.makedirs(dest_dirpath)
 
-		print('Converting image from ' + src_rel_dirpath + '...')
-		
-		img = Image.open(src_filepath)
+			# Skip if dest_filepath already exists
+			if os.path.isfile(dest_filepath):
+				continue
 
-		# Process and save a large image (resize, add watermark, etc.)
-		large_image = resize_image_using_ratio(img, img_settings.large_width)
+			print('Converting image from ' + src_rel_dirpath + '...')
+			
+			img = Image.open(src_filepath)
 
-		large_image = add_watermark_to_image(large_image, img_settings.Watermark.text, 
-			img_settings.Watermark.rgb, img_settings.Watermark.font_size)
+			# Process and save image instance (resize, add watermark, etc.)
+			img_output_instance_settings = img_settings.output_instances[instance_name]
+			output_image_width = img_output_instance_settings['image_width']
+			watermark_font_size = img_output_instance_settings['watermark_font_size']
 
-		large_image_filepath = utils.add_to_filename_without_extension(dest_filepath, '-lg')
+			converted_img = resize_image_using_ratio(img, output_image_width)
 
-		large_image.save(large_image_filepath, quality=80)
+			converted_img = add_watermark_to_image(converted_img, img_settings.Watermark.text, 
+				img_settings.Watermark.rgb, watermark_font_size)
 
-		# Resize and save a small image using the previously processed large image
-		small_image = resize_image_using_ratio(large_image, img_settings.small_width)
-		small_image_filepath = utils.add_to_filename_without_extension(dest_filepath, '-sm')
-		small_image.save(small_image_filepath, quality=80)
+			converted_img.save(dest_filepath, quality=80)
+
 
 def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
 	expected_filepaths_set = set([os.path.abspath(filepath) for filepath in expected_filepaths])
@@ -132,19 +135,25 @@ def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
 print("Getting list of source image paths...")
 src_filepaths = utils.get_full_filepaths_in_tree(settings.DirPaths.src_images)
 
-print("Building path transformations from source image path to destination image path...")
-src_to_dest_path_map = build_src_to_dest_image_path_map(src_filepaths, settings.DirPaths.dest_images)
+print("Building path transformations from source image path to destination image paths...")
+src_to_dest_instances_map = build_src_to_dest_image_path_map(src_filepaths, settings.DirPaths.dest_images, 
+	settings.ImageProcessing.output_instances)
 
 print("Processing and saving images to respective output paths...")
-process_and_save_images(src_to_dest_path_map, src_image_path=settings.DirPaths.src_images, 
+process_and_save_images(src_to_dest_instances_map, src_image_path=settings.DirPaths.src_images, 
 	img_settings=settings.ImageProcessing)
 
-dest_filepaths = list(src_to_dest_path_map.values())
+dest_instances = list(src_to_dest_instances_map.values())
+print(dest_instances[0])
+dest_filepaths = []
+for dest_instance in dest_instances:
+	dest_filepaths.extend(dest_instance.values())
+print(dest_filepaths[0])
 remove_extra_files_if_confirmed(settings.DirPaths.dest_images, dest_filepaths)
 
 
 print('Loading park content JSON...')
 with open(settings.FilePaths.park_content_json) as json_file:
 	park_content = json.load(json_file)
-	print('Test: ' + park_content['places'][0]['links'])
+	print('Test: ' + str(park_content['places'][0]['links']))
 
