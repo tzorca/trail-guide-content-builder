@@ -80,19 +80,27 @@ def process_and_save_images(src_to_dest_path, src_image_path, img_settings):
 			os.makedirs(dest_dirpath)
 
 		# Skip if dest_filepath already exists
-		if os.path.isfile(dest_filepath):
-			continue
+		# if os.path.isfile(dest_filepath):
+		# 	continue
 
 		print('Converting image from ' + src_rel_dirpath + '...')
 		
 		img = Image.open(src_filepath)
 
-		result_img = resize_image_using_ratio(img, img_settings.output_width)
+		# Process and save a large image (resize, add watermark, etc.)
+		large_image = resize_image_using_ratio(img, img_settings.large_width)
 
-		result_img = add_watermark_to_image(result_img, img_settings.Watermark.text, 
+		large_image = add_watermark_to_image(large_image, img_settings.Watermark.text, 
 			img_settings.Watermark.rgb, img_settings.Watermark.font_size)
 
-		result_img.save(dest_filepath, quality=80)
+		large_image_filepath = utils.add_to_filename_without_extension(dest_filepath, '-lg')
+
+		large_image.save(large_image_filepath, quality=80)
+
+		# Resize and save a small image using the previously processed large image
+		small_image = resize_image_using_ratio(large_image, img_settings.small_width)
+		small_image_filepath = utils.add_to_filename_without_extension(dest_filepath, '-sm')
+		small_image.save(small_image_filepath, quality=80)
 
 def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
 	expected_filepaths_set = set([os.path.abspath(filepath) for filepath in expected_filepaths])
@@ -107,7 +115,7 @@ def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
 	
 	if len(extra_filepaths) == 0:
 		return
-	
+
 	print('The following extra images exist at the destination: ')
 	for extra_filepath in extra_filepaths:
 		print(extra_filepath)
@@ -133,3 +141,10 @@ process_and_save_images(src_to_dest_path_map, src_image_path=settings.DirPaths.s
 
 dest_filepaths = list(src_to_dest_path_map.values())
 remove_extra_files_if_confirmed(settings.DirPaths.dest_images, dest_filepaths)
+
+
+print('Loading park content JSON...')
+with open(settings.FilePaths.park_content_json) as json_file:
+	park_content = json.load(json_file)
+	print('Test: ' + park_content['places'][0]['links'])
+
