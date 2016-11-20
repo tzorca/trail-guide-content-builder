@@ -1,6 +1,5 @@
 import re
 import os
-from PIL import Image
 
 
 def get_full_filepaths_in_tree(root_dir_path):
@@ -37,3 +36,8 @@ def resize_image_using_ratio(img, new_image_width, resample_mode):
     new_image_size = (int(new_image_width), int(new_image_height))
 
     return img.resize(size=new_image_size, resample=resample_mode)
+
+
+# Sourced from http://stackoverflow.com/a/7716358
+def mean(numbers):
+    return float(sum(numbers)) / max(len(numbers), 1)
