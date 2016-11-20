@@ -7,24 +7,11 @@ import settings
 import utils
 import sys
 
-
 if sys.version_info[0] != 3:
     print("This script requires Python version 3.0 or later")
     sys.exit(1)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
-
-def resize_image_using_ratio(img, new_image_width):
-    img_width = img.size[0]
-    img_height = img.size[1]
-
-    img_width_to_height_ratio = img_width / img_height
-
-    new_image_height = new_image_width / img_width_to_height_ratio
-    new_image_size = (int(new_image_width), int(new_image_height))
-
-    return img.resize(size=new_image_size, resample=Image.ANTIALIAS)
 
 
 def add_watermark_to_image(
@@ -116,13 +103,14 @@ def process_and_save_images(
             watermark_font_size = img_output_instance_settings[
                 'watermark_font_size']
 
-            converted_img = resize_image_using_ratio(img, output_image_width)
+            converted_img = utils.resize_image_using_ratio(
+                img, output_image_width, Image.BICUBIC)
 
             converted_img = add_watermark_to_image(
                 converted_img, img_settings.Watermark.text,
                 img_settings.Watermark.rgb, watermark_font_size)
 
-            converted_img.save(dest_filepath, quality=80)
+            converted_img.save(dest_filepath, quality=img_settings.jpeg_quality)
 
 
 def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
