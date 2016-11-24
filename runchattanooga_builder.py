@@ -91,8 +91,11 @@ def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
     actual_filepaths = glob.glob(os.path.join(dir_path, "*.*"))
     for actual_filepath in actual_filepaths:
         abs_actual_filepath = os.path.abspath(actual_filepath)
-        if abs_actual_filepath not in expected_filepaths_set:
-            extra_filepaths.append(abs_actual_filepath)
+        if abs_actual_filepath in expected_filepaths_set:
+            continue
+        if not os.path.isfile(abs_actual_filepath):
+            continue
+        extra_filepaths.append(abs_actual_filepath)
 
     if len(extra_filepaths) == 0:
         return
@@ -106,7 +109,8 @@ def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
 
     if user_input == 'delete':
         print('Removing extra files...')
-        for extra_filepathp in extra_filepaths:
+        extra_filepaths_set = set(extra_filepaths)
+        for extra_filepath in extra_filepaths_set:
             os.remove(extra_filepath)
 
 
@@ -139,6 +143,12 @@ print('Test: ' + dest_filepaths[0])
 remove_extra_files_if_confirmed(settings.DirPaths.dest_images, dest_filepaths)
 
 print('Loading park content JSON...')
+park_content = {}
 with open(settings.FilePaths.park_content_json) as json_file:
     park_content = json.load(json_file)
-    print('Test: ' + str(park_content['places'][0]['links']))
+
+print('Saving park images to park content JSON')
+places = park_content['places']
+
+for place in places:
+    print(place['name'])

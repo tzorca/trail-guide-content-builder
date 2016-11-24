@@ -1,4 +1,4 @@
-/settings.py
+settings.py
 /__pycache__
 /fonts
-/runchattanooga_builder/__pycache__/*.pyc
+*.pyc
