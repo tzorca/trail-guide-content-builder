@@ -66,7 +66,7 @@ def build_src_to_dest_image_path_map(
         current_mappings = src_path_to_dest_path[src_filepath]
         for img_output_name, img_output_props in img_output_instances.items():
             file_name = dest_file_base_name + \
-                img_output_props['filename_addition'] + ".jpg"
+                img_output_props.filename_add + ".jpg"
             current_mappings[img_output_name] = os.path.join(
                 dest_dirpath, file_name)
 
@@ -96,21 +96,22 @@ def process_and_save_images(
 
             img = Image.open(src_filepath)
 
-            # Process and save image instance (resize, add watermark, etc.)
-            img_output_instance_settings = img_settings.output_instances[
+            # Process and save image instance (resize, apply enhancements, add watermark, etc.)
+            instance_settings = img_settings.output_instances[
                 instance_name]
-            output_image_width = img_output_instance_settings['image_width']
-            watermark_font_size = img_output_instance_settings[
-                'watermark_font_size']
+            output_image_width = instance_settings.img_width
+            watermark_font_size = instance_settings.watermark_font_size
 
-            converted_img = utils.resize_image_using_ratio(
+            result_img = utils.resize_image_using_ratio(
                 img, output_image_width, Image.BICUBIC)
 
-            converted_img = add_watermark_to_image(
-                converted_img, img_settings.Watermark.text,
+            result_img = instance_settings.enhancement_algorithm_list.enhance(result_img)
+
+            result_img = add_watermark_to_image(
+                result_img, img_settings.Watermark.text,
                 img_settings.Watermark.rgb, watermark_font_size)
 
-            converted_img.save(dest_filepath, quality=img_settings.jpeg_quality)
+            result_img.save(dest_filepath, quality=img_settings.jpeg_quality)
 
 
 def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
