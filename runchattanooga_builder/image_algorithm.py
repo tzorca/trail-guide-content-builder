@@ -2,7 +2,7 @@ from PIL import ImageStat, ImageEnhance
 import operator
 import functools
 import math
-import utils
+from runchattanooga_builder import utils
 
 
 class FactorDeterminer:

@@ -2,10 +2,10 @@ from PIL import Image, ImageFont, ImageDraw, ImageFile
 import os
 import glob
 import json
-import hashlib
-import settings
-import utils
 import sys
+
+from runchattanooga_builder import settings, utils
+from runchattanooga_builder.models import ParkImage
 
 if sys.version_info[0] != 3:
     print("This script requires Python version 3.0 or later")
@@ -25,64 +25,33 @@ def add_watermark_to_image(
     return img
 
 
-def build_src_to_dest_image_path_map(
-        src_filepaths, dest_dirpath, img_output_instances):
-    rel_path_to_img_count = {}
-    src_path_to_dest_path = {}
+def get_park_image_models(src_filepaths, src_dirpath, dest_dirpath, img_output_instances):
+    park_images = []
 
     for src_filepath in src_filepaths:
-        # Get filename for src_filepath
-        src_filename = os.path.basename(src_filepath)
+        park_image = ParkImage(
+            src_filepath=src_filepath,
+            src_dirpath=src_dirpath,
+            dest_dirpath=dest_dirpath,
+            img_output_instances=img_output_instances
+        )
+        park_images.append(park_image)
 
-        # Get the image number contained in the file name
-        src_img_number = utils.get_numeric_part_from_string(src_filename)
-
-        # Get parent directory for src_filepath
-        src_file_dir_path = os.path.dirname(src_filepath)
-
-        # Get path relative to source root/start path (the part that comes
-        # after the root path)
-        start_rel_path = os.path.relpath(
-            src_file_dir_path, settings.DirPaths.src_images)
-
-        # Increment rel_path_to_img_count for that start_rel_path
-        rel_path_to_img_count[start_rel_path] = rel_path_to_img_count.get(
-            start_rel_path, 0) + 1
-
-        # Build destination paths
-        # Use hash of source directory to maintain a small correlation
-        #  between source path and destination filename.
-        # This should allow deleting individual destination images and
-        #  re-running the process quickly
-        # But still want to maintain order of files, so will use actual
-        # src_img_number as next part
-        start_rel_path_hash = hashlib.md5(
-            start_rel_path.encode('utf-8')).hexdigest()[:10]
-        dest_file_base_name = 'img-' + \
-            start_rel_path_hash + '-' + src_img_number
-
-        # Add mapping for each image destination
-        src_path_to_dest_path[src_filepath] = {}
-        current_mappings = src_path_to_dest_path[src_filepath]
-        for img_output_name, img_output_props in img_output_instances.items():
-            file_name = dest_file_base_name + \
-                img_output_props.filename_add + ".jpg"
-            current_mappings[img_output_name] = os.path.join(
-                dest_dirpath, file_name)
-
-    return src_path_to_dest_path
+    return park_images
 
 
-def process_and_save_images(
-        src_to_dest_instances, src_image_path, img_settings):
-    for src_filepath in src_to_dest_instances:
-        dest_instances = src_to_dest_instances[src_filepath]
+def process_and_save_images(park_image_models, src_dirpath, img_settings):
+    for park_image_model in park_image_models:
+        dest_instances = park_image_model.dest_instances
+        src_filepath = park_image_model.src_filepath
 
-        for instance_name, dest_filepath in dest_instances.items():
+        for dest_instance in dest_instances:
+            dest_filepath = dest_instance.filepath
+
             dest_dirpath = os.path.dirname(dest_filepath)
             src_dirpath = os.path.dirname(src_filepath)
 
-            src_rel_dirpath = os.path.relpath(src_dirpath, src_image_path)
+            src_rel_dirpath = os.path.relpath(src_dirpath, src_dirpath)
 
             # Create result directory if it doesn't exist
             if not os.path.exists(dest_dirpath):
@@ -98,7 +67,7 @@ def process_and_save_images(
 
             # Process and save image instance (resize, apply enhancements, add watermark, etc.)
             instance_settings = img_settings.output_instances[
-                instance_name]
+                dest_instance.img_name]
             output_image_width = instance_settings.img_width
             watermark_font_size = instance_settings.watermark_font_size
 
@@ -148,24 +117,27 @@ src_filepaths = utils.get_full_filepaths_in_tree(settings.DirPaths.src_images)
 print("Building path transformations from "
       "source image path to destination image paths...")
 
-src_to_dest_instances_map = build_src_to_dest_image_path_map(
-    src_filepaths, settings.DirPaths.dest_images,
-    settings.ImageProcessing.output_instances)
+park_image_models = get_park_image_models(
+    src_filepaths=src_filepaths,
+    src_dirpath=settings.DirPaths.src_images,
+    dest_dirpath=settings.DirPaths.dest_images,
+    img_output_instances=settings.ImageProcessing.output_instances)
 
 
 print("Processing and saving images to respective output paths...")
-process_and_save_images(src_to_dest_instances_map,
-                        src_image_path=settings.DirPaths.src_images,
-                        img_settings=settings.ImageProcessing)
+process_and_save_images(
+    park_image_models,
+    src_dirpath=settings.DirPaths.src_images,
+    img_settings=settings.ImageProcessing)
 
-dest_instances = list(src_to_dest_instances_map.values())
-print(dest_instances[0])
+# Get destination filepaths from park_image_models
 dest_filepaths = []
-for dest_instance in dest_instances:
-    dest_filepaths.extend(dest_instance.values())
-print(dest_filepaths[0])
-remove_extra_files_if_confirmed(settings.DirPaths.dest_images, dest_filepaths)
+for park_image_model in park_image_models:
+    for dest_instance in park_image_model.dest_instances:
+        dest_filepaths.append(dest_instance.filepath)
 
+print('Test: ' + dest_filepaths[0])
+remove_extra_files_if_confirmed(settings.DirPaths.dest_images, dest_filepaths)
 
 print('Loading park content JSON...')
 with open(settings.FilePaths.park_content_json) as json_file:
