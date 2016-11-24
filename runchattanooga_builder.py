@@ -40,7 +40,7 @@ def get_park_image_models(src_filepaths, src_dirpath, dest_dirpath, img_output_i
     return park_images
 
 
-def process_and_save_images(park_image_models, src_dirpath, img_settings):
+def process_and_save_images(park_image_models, src_master_dirpath, img_settings):
     for park_image_model in park_image_models:
         dest_instances = park_image_model.dest_instances
         src_filepath = park_image_model.src_filepath
@@ -49,9 +49,6 @@ def process_and_save_images(park_image_models, src_dirpath, img_settings):
             dest_filepath = dest_instance.filepath
 
             dest_dirpath = os.path.dirname(dest_filepath)
-            src_dirpath = os.path.dirname(src_filepath)
-
-            src_rel_dirpath = os.path.relpath(src_dirpath, src_dirpath)
 
             # Create result directory if it doesn't exist
             if not os.path.exists(dest_dirpath):
@@ -61,7 +58,9 @@ def process_and_save_images(park_image_models, src_dirpath, img_settings):
             if os.path.isfile(dest_filepath):
                 continue
 
-            print('Converting image from ' + src_rel_dirpath + '...')
+            rel_src_filepath = os.path.relpath(src_filepath, src_master_dirpath)
+            print()
+            print('Converting ' + rel_src_filepath + '...')
 
             img = Image.open(src_filepath)
 
@@ -127,7 +126,7 @@ park_image_models = get_park_image_models(
 print("Processing and saving images to respective output paths...")
 process_and_save_images(
     park_image_models,
-    src_dirpath=settings.DirPaths.src_images,
+    src_master_dirpath=settings.DirPaths.src_images,
     img_settings=settings.ImageProcessing)
 
 # Get destination filepaths from park_image_models

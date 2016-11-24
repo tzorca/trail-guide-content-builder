@@ -21,6 +21,12 @@ class ParkImage:
         # after the root path)
         start_rel_path = os.path.relpath(src_file_dir_path, src_dirpath)
 
+        # Get park name from name of first directory in start_rel_path
+        # Get season name from name of second directory in start_rel_path
+        start_rel_path_dirs = os.path.normpath(start_rel_path).split(os.sep)
+        self.park_name = start_rel_path_dirs[0]
+        self.season_name = start_rel_path_dirs[1]
+
         # Build destination paths
         # Use hash of source directory to maintain a small correlation
         # between source path and destination filename.
