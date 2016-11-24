@@ -49,6 +49,12 @@ class ParkImage:
             self.dest_instances.append(
                 ParkImageDestinationInstance(img_output_name, dest_filepath))
 
+    def get_dest_image_paths(self):
+        dest_filepaths = []
+        for dest_instance in self.dest_instances:
+            dest_filepaths.append(dest_instance.filepath)
+        return dest_filepaths
+
 
 class ParkImageDestinationInstance:
 

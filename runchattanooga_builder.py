@@ -1,4 +1,5 @@
 from PIL import Image, ImageFont, ImageDraw, ImageFile
+from collections import defaultdict
 import os
 import glob
 import json
@@ -114,6 +115,33 @@ def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
             os.remove(extra_filepath)
 
 
+def save_park_images_to_park_content(park_image_models, park_content):
+    park_images_by_park = defaultdict(list)
+    for park_image_model in park_image_models:
+        park_name = park_image_model.park_name
+        park_images_by_park[park_name].append(park_image_model)
+
+    places = park_content['places']
+    for place in places:
+        park_name = place['name']
+        if park_name not in park_images_by_park:
+            print(park_name + ' not found in park content JSON file')
+            continue
+
+        images_for_park = park_images_by_park[park_name]
+        print(place['name'] + ' has ' + str(len(images_for_park)) + ' images')
+
+        place['images'] = defaultdict(lambda: defaultdict(list))
+        for park_image_model in images_for_park:
+            season_name = park_image_model.season_name
+            park_season_images = place['images'][season_name]
+            for dest_instance in park_image_model.dest_instances:
+                instance_name = dest_instance.img_name
+                filename = os.path.basename(dest_instance.filepath)
+                image_path = os.path.join(settings.DirPaths.site_image_dir, filename)
+                park_season_images[instance_name].append(image_path)
+
+
 print("Getting list of source image paths...")
 src_filepaths = utils.get_full_filepaths_in_tree(settings.DirPaths.src_images)
 
@@ -136,19 +164,19 @@ process_and_save_images(
 # Get destination filepaths from park_image_models
 dest_filepaths = []
 for park_image_model in park_image_models:
-    for dest_instance in park_image_model.dest_instances:
-        dest_filepaths.append(dest_instance.filepath)
+    dest_filepaths.extend(park_image_model.get_dest_image_paths())
 
 print('Test: ' + dest_filepaths[0])
 remove_extra_files_if_confirmed(settings.DirPaths.dest_images, dest_filepaths)
 
 print('Loading park content JSON...')
 park_content = {}
-with open(settings.FilePaths.park_content_json) as json_file:
-    park_content = json.load(json_file)
+with open(settings.FilePaths.src_park_content_json) as src_park_content_file:
+    park_content = json.load(src_park_content_file)
 
-print('Saving park images to park content JSON')
-places = park_content['places']
+print('Adding park image paths to park content...')
+save_park_images_to_park_content(park_image_models, park_content)
 
-for place in places:
-    print(place['name'])
+print('Saving park content JSON to destination...')
+with open(settings.FilePaths.dest_park_content_json, 'w') as dest_park_content_file:
+    dest_park_content_file.write(json.dumps(park_content, indent=1))
