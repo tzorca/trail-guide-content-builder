@@ -1,4 +1,4 @@
-from PIL import ImageStat, ImageEnhance
+from PIL import ImageStat, ImageEnhance, ImageOps
 import operator
 import functools
 import math
@@ -7,11 +7,12 @@ from runchattanooga_builder import utils
 
 class FactorDeterminer:
 
-    def __init__(self, max_val=None, min_val=None, target_val=None, avg_count=0):
+    def __init__(self, max_val=None, min_val=None, target_val=None, avg_count=0, cutoff=0):
         self.max_val = max_val
         self.min_val = min_val
         self.target_val = target_val
         self.avg_count = avg_count
+        self.cutoff = cutoff
 
     def determine(self, orig_val):
         if self.max_val is not None and orig_val > self.max_val:
@@ -31,6 +32,7 @@ class FactorDeterminer:
 class EnhancementType:
     Brightness = 0
     Saturation = 1
+    AutoContrast = 2
 
 
 class EnhancementAlgorithm:
@@ -40,6 +42,7 @@ class EnhancementAlgorithm:
         self.factor_determiner = factor_determiner
 
     def enhance(self, img):
+        enhancer = None
         if self.enhancement_type is EnhancementType.Brightness:
             orig_val = get_brightness(img)
             enhancer = ImageEnhance.Brightness(img)
@@ -50,9 +53,22 @@ class EnhancementAlgorithm:
             enhancer = ImageEnhance.Color(img)
             print('orig_saturation = ' + str(orig_val))
 
-        factor = self.factor_determiner.determine(orig_val)
+        if enhancer:
+            factor = self.factor_determiner.determine(orig_val)
+            return enhancer.enhance(factor)
+        else:
+            if self.enhancement_type is EnhancementType.AutoContrast:
+                # Autocontrast once before applying cutoff
+                result_img = ImageOps.autocontrast(img)
 
-        return enhancer.enhance(factor)
+                if self.factor_determiner.cutoff != 0:
+                    result_img = ImageOps.autocontrast(
+                        result_img, cutoff=self.factor_determiner.cutoff)
+
+                return result_img
+
+        print('Invalid algorithm')
+        return img
 
 
 class EnhancementAlgorithmList:

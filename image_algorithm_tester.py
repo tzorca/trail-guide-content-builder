@@ -1,8 +1,7 @@
 from PIL import Image
 import os
-import utils
-import settings
-from image_algorithm import FactorDeterminer, EnhancementType, EnhancementAlgorithm, EnhancementAlgorithmList
+from runchattanooga_builder import utils, settings
+from runchattanooga_builder.image_algorithm import FactorDeterminer, EnhancementType, EnhancementAlgorithm, EnhancementAlgorithmList
 
 OUTPUT_IMAGE_WIDTH = 1280
 
@@ -10,24 +9,37 @@ OUTPUT_IMAGE_WIDTH = 1280
 # Set up algorithms
 brightness_min_100 = EnhancementAlgorithm(
     enhancement_type=EnhancementType.Brightness,
-    factor_determiner=FactorDeterminer(min_val=90, avg_count=0))
-
-saturation_min_60_max_130 = EnhancementAlgorithm(
+    factor_determiner=FactorDeterminer(min_val=100, avg_count=0))
+saturation_min_30_max_130 = EnhancementAlgorithm(
     enhancement_type=EnhancementType.Saturation,
-    factor_determiner=FactorDeterminer(min_val=60, max_val=130, avg_count=0))
+    factor_determiner=FactorDeterminer(min_val=30, max_val=130, avg_count=0))
+saturation_min_30_max_130 = EnhancementAlgorithm(
+    enhancement_type=EnhancementType.Saturation,
+    factor_determiner=FactorDeterminer(min_val=30, max_val=130, avg_count=0))
+autocontrast_normal = EnhancementAlgorithm(
+    enhancement_type=EnhancementType.AutoContrast,
+    factor_determiner=FactorDeterminer())
+autocontrast_cutoff_1percent = EnhancementAlgorithm(
+    enhancement_type=EnhancementType.AutoContrast,
+    factor_determiner=FactorDeterminer(cutoff=0.01))
 
+# Set up algorithm lists
 enhancement_algorithm_lists = [
     EnhancementAlgorithmList(
         'Brightness-Min-100',
         [brightness_min_100]
     ),
     EnhancementAlgorithmList(
-        'Saturation-Min-60-Max-130',
-        [saturation_min_60_max_130]
+        'Saturation-30-to-130_BrightFix',
+        [saturation_min_30_max_130, brightness_min_100]
     ),
     EnhancementAlgorithmList(
-        'Saturation-Min-60-Max-130_Brightness-Min-100',
-        [saturation_min_60_max_130, brightness_min_100]
+        'Saturation-30-to-130_BrightFix-AutoContrast',
+        [saturation_min_30_max_130, brightness_min_100, autocontrast_normal]
+    ),
+    EnhancementAlgorithmList(
+        'Saturation-30-to-130_BrightFix-AutoContrast-Cutoff-1percent',
+        [saturation_min_30_max_130, brightness_min_100, autocontrast_cutoff_1percent]
     )
 ]
 #
