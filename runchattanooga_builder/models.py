@@ -27,6 +27,11 @@ class ParkImage:
         self.park_name = start_rel_path_dirs[0]
         self.season_name = start_rel_path_dirs[1]
 
+        # Get photo date
+        date_photo_taken = utils.get_date_photo_taken(self.src_filepath)
+        date_file_modified = utils.get_date_modified(self.src_filepath)
+        self.date_photo_taken = date_photo_taken or date_file_modified
+
         # Build destination paths
         # Use hash of source directory to maintain a small correlation
         # between source path and destination filename.

@@ -1,5 +1,40 @@
 import re
+from PIL import Image
 import os
+from datetime import datetime
+import json
+
+
+# Sourced from http://stackoverflow.com/a/27058505
+class DateTimeEncoder(json.JSONEncoder):
+
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+
+        return json.JSONEncoder.default(self, o)
+
+
+# Sourced from http://stackoverflow.com/a/1526089
+def get_date_modified(filename):
+    t = os.path.getmtime(filename)
+    return datetime.fromtimestamp(t)
+
+
+# Partially sourced from http://stackoverflow.com/a/23064792
+def get_date_photo_taken(filepath):
+    img = Image.open(filepath)
+    if not img:
+        return None
+
+    exif = img._getexif()
+    if not exif:
+        return None
+
+    exif_str_val = exif[36867]
+
+    exif_datetime_val = datetime.strptime(exif_str_val, '%Y:%m:%d %H:%M:%S')
+    return exif_datetime_val
 
 
 def get_full_filepaths_in_tree(root_dir_path):

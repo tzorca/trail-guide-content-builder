@@ -139,7 +139,10 @@ def save_park_images_to_park_content(park_image_models, park_content):
                 instance_name = dest_instance.img_name
                 filename = os.path.basename(dest_instance.filepath)
                 image_path = os.path.join(settings.DirPaths.site_image_dir, filename)
-                park_season_images[instance_name].append(image_path)
+                park_season_images[instance_name].append({
+                    "path": image_path,
+                    "date": park_image_model.date_photo_taken
+                })
 
 
 print("Getting list of source image paths...")
@@ -179,4 +182,4 @@ save_park_images_to_park_content(park_image_models, park_content)
 
 print('Saving park content JSON to destination...')
 with open(settings.FilePaths.dest_park_content_json, 'w') as dest_park_content_file:
-    dest_park_content_file.write(json.dumps(park_content, indent=1))
+    dest_park_content_file.write(json.dumps(park_content, indent=1, cls=utils.DateTimeEncoder))
