@@ -131,15 +131,14 @@ def save_park_images_to_park_content(park_image_models, park_content):
         images_for_park = park_images_by_park[park_name]
         print(place['name'] + ' has ' + str(len(images_for_park)) + ' images')
 
-        place['images'] = defaultdict(lambda: defaultdict(list))
+        place['images'] = defaultdict(list)
+        place_images = place['images']
         for park_image_model in images_for_park:
-            season_name = park_image_model.season_name
-            park_season_images = place['images'][season_name]
             for dest_instance in park_image_model.dest_instances:
                 instance_name = dest_instance.img_name
                 filename = os.path.basename(dest_instance.filepath)
                 image_path = os.path.join(settings.DirPaths.site_image_dir, filename)
-                park_season_images[instance_name].append({
+                place_images[instance_name].append({
                     "path": image_path,
                     "date": park_image_model.date_photo_taken
                 })
