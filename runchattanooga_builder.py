@@ -69,10 +69,16 @@ def process_and_save_images(park_image_models, src_master_dirpath, img_settings)
             instance_settings = img_settings.output_instances[
                 dest_instance.img_name]
             output_image_width = instance_settings.img_width
+            output_image_height = instance_settings.img_height
             watermark_font_size = instance_settings.watermark_font_size
 
-            result_img = utils.resize_image_using_ratio(
-                img, output_image_width, Image.BICUBIC)
+            result_img = img
+
+            result_img = utils.resize_fill_image(
+                result_img, output_image_width, output_image_height, Image.BICUBIC)
+
+            result_img = utils.canvas_resize_image(
+                result_img, output_image_width, output_image_height)
 
             result_img = instance_settings.enhancement_algorithm_list.enhance(result_img)
 

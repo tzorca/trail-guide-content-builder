@@ -3,6 +3,7 @@ from PIL import Image
 import os
 from datetime import datetime
 import json
+import math
 
 
 # Sourced from http://stackoverflow.com/a/27058505
@@ -61,16 +62,51 @@ def add_to_filename_without_extension(filepath, addition):
                         addition + filename_ext)
 
 
-def resize_image_using_ratio(img, new_image_width, resample_mode):
+def resize_fill_image(img, min_image_width, min_image_height, resample_mode):
     img_width = img.size[0]
     img_height = img.size[1]
+    old_ratio = img_width / img_height
+    new_ratio = min_image_width / min_image_height
+    print('old_ratio=' + str(old_ratio) + ', new_ratio=' + str(new_ratio))
 
-    img_width_to_height_ratio = img_width / img_height
+    if old_ratio <= new_ratio:
+        new_image_width = min_image_width
+        new_image_height = new_image_width / old_ratio
+    else:
+        new_image_height = min_image_height
+        new_image_width = new_image_height * old_ratio
 
-    new_image_height = new_image_width / img_width_to_height_ratio
-    new_image_size = (int(new_image_width), int(new_image_height))
+    new_image_size = (
+        int(new_image_width),
+        int(new_image_height)
+    )
 
     return img.resize(size=new_image_size, resample=resample_mode)
+
+
+# Partially sourced from http://stackoverflow.com/a/27784150
+def canvas_resize_image(img, canvas_width, canvas_height):
+    """Resize the canvas of old_image_path. Center the image on the new canvas.
+    """
+
+    old_width, old_height = img.size
+
+    # Center the image
+    x1 = int(math.floor((canvas_width - old_width) / 2))
+    y1 = int(math.floor((canvas_height - old_height) / 2))
+
+    mode = img.mode
+    if len(mode) == 1:  # L, 1
+        new_background = (255)
+    if len(mode) == 3:  # RGB
+        new_background = (255, 255, 255)
+    if len(mode) == 4:  # RGBA, CMYK
+        new_background = (255, 255, 255, 255)
+
+    newImage = Image.new(mode, (canvas_width, canvas_height), new_background)
+    newImage.paste(img, (x1, y1, x1 + old_width, y1 + old_height))
+
+    return newImage
 
 
 # Sourced from http://stackoverflow.com/a/7716358
