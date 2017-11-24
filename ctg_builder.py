@@ -86,7 +86,7 @@ def process_and_save_images(park_image_models, src_master_dirpath, img_settings)
                 result_img, img_settings.Watermark.text,
                 img_settings.Watermark.rgb, watermark_font_size)
 
-            result_img.save(dest_filepath, quality=img_settings.jpeg_quality)
+            result_img.save(dest_filepath, progresssive=True, quality=img_settings.jpeg_quality)
 
 
 def remove_extra_files_if_confirmed(dir_path, expected_filepaths):
