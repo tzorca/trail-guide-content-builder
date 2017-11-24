@@ -5,8 +5,8 @@ import glob
 import json
 import sys
 
-from runchattanooga_builder import settings, utils
-from runchattanooga_builder.models import ParkImage
+from ctg_builder import settings, utils
+from ctg_builder.models import ParkImage
 
 if sys.version_info[0] != 3:
     print("This script requires Python version 3.0 or later")

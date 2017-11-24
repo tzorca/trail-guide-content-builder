@@ -1,7 +1,7 @@
 from PIL import Image
 import os
-from runchattanooga_builder import utils, settings
-from runchattanooga_builder.image_algorithm import FactorDeterminer, EnhancementType, EnhancementAlgorithm, EnhancementAlgorithmList
+from ctg_builder import utils, settings
+from ctg_builder.image_algorithm import FactorDeterminer, EnhancementType, EnhancementAlgorithm, EnhancementAlgorithmList
 
 OUTPUT_IMAGE_WIDTH = 1280
 OUTPUT_IMAGE_HEIGHT = 960

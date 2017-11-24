@@ -1,6 +1,6 @@
 import os
 import hashlib
-from runchattanooga_builder import utils
+from ctg_builder import utils
 
 
 class ParkImage:
