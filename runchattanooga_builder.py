@@ -185,6 +185,8 @@ with open(settings.FilePaths.src_park_content_json) as src_park_content_file:
 print('Adding park image paths to park content...')
 save_park_images_to_park_content(park_image_models, park_content)
 
-print('Saving park content JSON to destination...')
-with open(settings.FilePaths.dest_park_content_json, 'w') as dest_park_content_file:
-    dest_park_content_file.write(json.dumps(park_content, indent=1, cls=utils.DateTimeEncoder))
+print('Saving park content JSON to destination JS...')
+park_content_json = json.dumps(park_content, indent=1, cls=utils.DateTimeEncoder)
+park_content_js = 'module.exports = ' + park_content_json + ';'
+with open(settings.FilePaths.dest_park_content_js, 'w') as dest_park_content_file:
+    dest_park_content_file.write(park_content_js)

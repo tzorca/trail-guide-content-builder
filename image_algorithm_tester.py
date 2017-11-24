@@ -4,6 +4,7 @@ from runchattanooga_builder import utils, settings
 from runchattanooga_builder.image_algorithm import FactorDeterminer, EnhancementType, EnhancementAlgorithm, EnhancementAlgorithmList
 
 OUTPUT_IMAGE_WIDTH = 1280
+OUTPUT_IMAGE_HEIGHT = 960
 
 #
 # Set up algorithms
@@ -58,14 +59,14 @@ def test_resize_resample_modes(img, base_image_name):
         mode = resample_mode['mode']
         mode_name = resample_mode['name']
 
-        result_img = utils.resize_image_using_ratio(
-            img, OUTPUT_IMAGE_WIDTH, mode)
+        result_img = utils.resize_fill_image(
+            img, OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_HEIGHT, mode)
 
         output_filename = base_image_name + '-' + mode_name + '.jpg'
         output_path = os.path.join(
             settings.DirPaths.test_dest_images, 'resample', output_filename)
 
-        result_img.save(output_path, quality=settings.ImageProcessing.jpeg_quality)
+        result_img.save(output_path, quality=settings.ImageProcessing.jpeg_quality,optimize=true)
 
 
 def test_enhancement_algorithms(img, base_image_name):
@@ -95,6 +96,6 @@ for filepath in settings.FilePaths.test_images:
 
     # test_resize_resample_modes(img, base_image_name)
 
-    resized_img = utils.resize_image_using_ratio(img, OUTPUT_IMAGE_WIDTH, Image.BILINEAR)
+    resized_img = utils.resize_fill_image(img, OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_HEIGHT, Image.BILINEAR)
 
     test_enhancement_algorithms(resized_img, base_image_name)

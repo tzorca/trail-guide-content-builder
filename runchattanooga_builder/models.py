@@ -11,8 +11,8 @@ class ParkImage:
         # Get filename for src_filepath
         src_filename = os.path.basename(self.src_filepath)
 
-        # Get the image number contained in the file name
-        src_img_number = utils.get_numeric_part_from_string(src_filename)
+        # Get the last 4 digits of the image number contained in the file name
+        src_img_number = utils.get_numeric_part_from_string(src_filename)[-4:]
 
         # Get parent directory for src_filepath
         src_file_dir_path = os.path.dirname(self.src_filepath)
@@ -25,7 +25,6 @@ class ParkImage:
         # Get season name from name of second directory in start_rel_path
         start_rel_path_dirs = os.path.normpath(start_rel_path).split(os.sep)
         self.park_name = start_rel_path_dirs[0]
-        self.season_name = start_rel_path_dirs[1]
 
         # Get photo date
         date_photo_taken = utils.get_date_photo_taken(self.src_filepath)
